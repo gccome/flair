@@ -455,8 +455,8 @@ class NLPTaskDataFetcher:
         sentence: Sentence = Sentence()
         for line in lines:
 
-            if line.startswith('#'):
-                continue
+            # if line.startswith('#'):
+            #     continue
 
             if line.strip().replace('﻿', '') == '':
                 if len(sentence) > 0:
