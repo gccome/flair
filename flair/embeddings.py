@@ -1,3 +1,4 @@
+import os
 import re
 import logging
 from abc import abstractmethod
@@ -253,13 +254,31 @@ class BPEmbSerializable(BPEmb):
 
     def __getstate__(self):
         state = self.__dict__.copy()
+        # save the sentence piece model as binary file (not as path which may change)
+        state['spm_model_binary'] = open(self.model_file, mode='rb').read()
         state['spm'] = None
         return state
 
     def __setstate__(self, state):
         from bpemb.util import sentencepiece_load
-        state['spm'] = sentencepiece_load(state['model_file'])
+        model_file = self.model_tpl.format(lang=state['lang'], vs=state['vs'])
         self.__dict__ = state
+
+        # write out the binary sentence piece model into the expected directory
+        self.cache_dir: Path = Path(flair.file_utils.CACHE_ROOT) / 'embeddings'
+        if 'spm_model_binary' in self.__dict__:
+            # if the model was saved as binary and it is not found on disk, write to appropriate path
+            if not os.path.exists(self.cache_dir / state['lang']):
+                os.makedirs(self.cache_dir / state['lang'])
+            self.model_file = self.cache_dir / model_file
+            with open(self.model_file, 'wb') as out:
+                out.write(self.__dict__['spm_model_binary'])
+        else:
+            # otherwise, use normal process and potentially trigger another download
+            self.model_file = self._load_file(model_file)
+
+        # once the modes if there, load it with sentence piece
+        state['spm'] = sentencepiece_load(self.model_file)
 
 
 class BytePairEmbeddings(TokenEmbeddings):
@@ -333,6 +352,9 @@ class ELMoEmbeddings(TokenEmbeddings):
         if model == 'pt' or model == 'portuguese':
             options_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/contributed/pt/elmo_pt_options.json'
             weight_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/contributed/pt/elmo_pt_weights.hdf5'
+        if model == 'pubmed':
+            options_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/contributed/pubmed/elmo_2x4096_512_2048cnn_2xhighway_options.json'
+            weight_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/contributed/pubmed/elmo_2x4096_512_2048cnn_2xhighway_weights_PubMed_only.hdf5'
 
         # put on Cuda if available
         from flair import device
@@ -508,7 +530,7 @@ class CharacterEmbeddings(TokenEmbeddings):
             longest_token_in_sentence = max(chars2_length)
             tokens_mask = torch.zeros((len(tokens_sorted_by_length), longest_token_in_sentence),
                                       dtype=torch.long, device=flair.device)
-            
+
             for i, c in enumerate(tokens_sorted_by_length):
                 tokens_mask[i, :chars2_length[i]] = torch.tensor(c, dtype=torch.long, device=flair.device)
 
