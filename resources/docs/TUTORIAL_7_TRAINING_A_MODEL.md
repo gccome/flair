@@ -1,6 +1,6 @@
 # Tutorial 7: Training a Model
 
-This part of the tutorial shows how you can train your own sequence labeling and text
+This part of the tutorial shows how you can train your own sequence labelling and text
 classification models using state-of-the-art word embeddings.
 
 For this tutorial, we assume that you're familiar with the [base types](/resources/docs/TUTORIAL_1_BASICS.md) of this
@@ -124,7 +124,7 @@ word_embeddings = [WordEmbeddings('glove'),
                    # FlairEmbeddings('news-backward'),
                    ]
 
-# 4. init document embedding by passing list of word embeddings
+# 4. initialize document embedding by passing list of word embeddings
 document_embeddings: DocumentLSTMEmbeddings = DocumentLSTMEmbeddings(word_embeddings,
                                                                      hidden_size=512,
                                                                      reproject_words=True,
@@ -338,7 +338,7 @@ retrieved from disk if you choose to materialize to disk.
 
 3. Do you have a fast hard drive?
 
-If you have a fast hard drive, consider materializing the embeddings to disk. You can do this my instantiating FlairEmbeddings as follows: `FlairEmbeddings('news-forward-fast', use_cache=True)`. This can help if embeddings do not fit into memory. Also if you do not have a GPU and want to do repeat experiments on the same dataset, this helps because embeddings need only be computed once and will then always be retrieved from disk. 
+If you have a fast hard drive, consider materializing the embeddings to disk. You can do this by instantiating FlairEmbeddings as follows: `FlairEmbeddings('news-forward-fast', use_cache=True)`. This can help if embeddings do not fit into memory. Also if you do not have a GPU and want to do repeat experiments on the same dataset, this helps because embeddings need only be computed once and will then always be retrieved from disk. 
 
 
 ## Next
