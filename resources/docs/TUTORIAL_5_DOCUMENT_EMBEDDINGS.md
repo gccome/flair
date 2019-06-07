@@ -1,7 +1,7 @@
 # Tutorial 5: Document Embeddings
 
-Document embeddings are different from [word embeddings](/resources/docs/TUTORIAL_3_WORD_EMBEDDING.md) in that they 
-give you one embedding for an entire text, whereas word embeddings give you embeddings for individual words. 
+Document embeddings are different from [word embeddings](/resources/docs/TUTORIAL_3_WORD_EMBEDDING.md) in that they
+give you one embedding for an entire text, whereas word embeddings give you embeddings for individual words.
 
 For this tutorial, we assume that you're familiar with the [base types](/resources/docs/TUTORIAL_1_BASICS.md) of this
 library and how [word embeddings](/resources/docs/TUTORIAL_3_WORD_EMBEDDING.md) work.
@@ -28,7 +28,7 @@ The resulting embedding is taken as document embedding.
 
 To create a mean document embedding simply create any number of `TokenEmbeddings` first and put them in a list.
 Afterwards, initiate the `DocumentPoolEmbeddings` with this list of `TokenEmbeddings`.
-So, if you want to create a document embedding using GloVe embeddings together with CharLMEmbeddings,
+So, if you want to create a document embedding using GloVe embeddings together with `FlairEmbeddings`,
 use the following code:
 
 ```python
@@ -68,7 +68,30 @@ to use to the initialization of the `DocumentPoolEmbeddings`:
 document_embeddings = DocumentPoolEmbeddings([glove_embedding,
                                              flair_embedding_backward,
                                              flair_embedding_backward],
-                                             mode='min')
+                                             pooling='min')
+```
+
+You can also choose which fine-tuning operation you want, i.e. which transformation to apply before word embeddings get
+pooled. The default operation is 'linear' transformation, but if you only use simple word embeddings that are 
+not task-trained you should probably use a 'nonlinear' transformation instead:
+
+```python
+# instantiate pre-trained word embeddings
+embeddings = WordEmbeddings('glove')
+
+# document pool embeddings
+document_embeddings = DocumentPoolEmbeddings([embeddings], fine_tune_mode='nonlinear')
+```
+
+If on the other hand you use word embeddings that are task-trained (such as simple one hot encoded embeddings), you 
+are often better off doing no transformation at all. Do this by passing 'none':
+
+```python
+# instantiate one-hot encoded word embeddings
+embeddings = OneHotEmbeddings(corpus)
+
+# document pool embeddings
+document_embeddings = DocumentPoolEmbeddings([embeddings], fine_tune_mode='none')
 ```
 
 
@@ -116,7 +139,18 @@ document_lstm_embeddings = DocumentRNNEmbeddings([glove_embedding], rnn_type='LS
 ```
 
 Note that while `DocumentPoolEmbeddings` are immediately meaningful, `DocumentRNNEmbeddings` need to be tuned on the
-downstream task. This happens automatically in Flair if you train a new model with these embeddings.
+downstream task. This happens automatically in Flair if you train a new model with these embeddings. You can find an example of training a text classification model [here](/resources/docs/TUTORIAL_7_TRAINING_A_MODEL.md#training-a-text-classification-model). Once the model is trained, you can access the tuned `DocumentRNNEmbeddings` object directly from the classifier object and use it to embed sentences.
+
+```python
+document_embeddings = classifier.document_embeddings
+
+sentence = Sentence('The grass is green . And the sky is blue .')
+
+document_embeddings.embed(sentence)
+
+print(sentence.get_embedding())
+```
+
 `DocumentRNNEmbeddings` have a number of hyper-parameters that can be tuned to improve learning:
 
 ```text
@@ -133,7 +167,7 @@ dimension as before will be taken.
 :param rnn_type: one of 'RNN', 'LSTM', 'RNN_TANH' or 'RNN_RELU'
 ```
 
-## Next 
+## Next
 
 You can now either look into the tutorial about [loading your corpus](/resources/docs/TUTORIAL_6_CORPUS.md), which
 is a pre-requirement for [training your own models](/resources/docs/TUTORIAL_7_TRAINING_A_MODEL.md)
